@@ -1,2 +1,15 @@
+# checkpoints 디렉토리 무시
+/checkpoints/**
+
 # data 디렉토리 무시
-/data/
+/data/**
+
+# data 내 예외처리 파일
+!/data/
+!/data/download_3RScan.py
+!/data/download_ScanNet.py
+!/data/hm3dsem_preparation.py
+
+/outputs/
+__init__.py
+__pycache__/
