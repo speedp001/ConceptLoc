@@ -1,26 +1,14 @@
 import os
 import hydra
-
 from omegaconf import DictConfig
 from hovsg.graph.graph import Graph
-from open3dsg.relational_graph import RelationalGraph
 
 # pylint: disable=all
 
-# ./config/create_graph.yaml 파일에서 설정 불러오기
-'''
-Hydra가 실제로 하는 일
-def _wrapped_main():
 
-    cfg_dict = yaml_load("../config/create_graph.yaml")
-    params = DictConfig(cfg_dict)
-    
-    return main(params)
-'''
 @hydra.main(version_base=None, config_path="./config", config_name="create_graph")
 def main(params: DictConfig):
     # create logging directory
-    # 저장 디렉토리 설정
     save_dir = os.path.join(params.main.save_path, params.main.dataset, params.main.scene_id)
     params.main.save_path = save_dir
     params.main.dataset_path = os.path.join(params.main.dataset_path, params.main.split, params.main.scene_id)
@@ -29,7 +17,7 @@ def main(params: DictConfig):
 
     # create graph
     hovsg = Graph(params)
-    hovsg.create_feature_map() # create feature map
+    # hovsg.create_feature_map() # create feature map
 
     # save full point cloud, features, and masked point clouds (pcd for all objects)
     hovsg.save_masked_pcds(path=save_dir, state="both")
@@ -40,12 +28,13 @@ def main(params: DictConfig):
     # hovsg.load_full_pcd(path=save_dir)
     # hovsg.load_full_pcd_feats(path=save_dir)
     # hovsg.load_masked_pcds(path=save_dir)
-
-    # create graph, only if dataset is hm3dsem
+    
+    # create graph, only if dataset is not Replia or ScanNet
     print(params.main.dataset)
-
-    open3dsg = RelationalGraph(params)
-    open3dsg.build_relational_graph(save_path=save_dir)
+    if params.main.dataset != "replica" and params.main.dataset != "scannet" and params.pipeline.create_graph:
+        hovsg.build_graph(save_path=save_dir)
+    else:
+        print("Skipping hierarchical scene graph creation for Replica and ScanNet datasets.")
 
 if __name__ == "__main__":
     main()

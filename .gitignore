@@ -1,3 +1,2 @@
-**/HOV-SG-main/**
-**/VLSG-main/**
-**/Open3DSG-main/**
+# data 디렉토리 무시
+/data/

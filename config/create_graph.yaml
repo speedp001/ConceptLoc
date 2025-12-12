@@ -1,0 +1,87 @@
+main:
+  device: cuda
+  dataset: hm3dsem # scannet, replica
+  scene_id: 00890-6s7QHgap2fW # scene0011_00
+  split: val
+  package_path: ./hovsg/
+  dataset_path: ./data/hm3dsem_walks/
+  raw_data_path: ./data/hm3dsem
+  save_path: ./data/hm3dsem_scene_graph/
+
+dataset:
+  hm3dsem:
+    gt_skip_frames: 2
+
+models:
+  clip:
+    type:  ViT-H-14 # ViT-L/14@336px # ViT-H-14
+    # type:  ViT-B-32 # ViT-L/14@336px # ViT-H-14
+    checkpoint: checkpoints/laion2b_s32b_b79k.bin
+    # checkpoint: checkpoints/laion2b_s34b_b79k.bin
+    # checkpoint: checkpoints/ovseg_clipl14_9a1909.pth checkpoints/laion2b_s32b_b79k.bin
+  sam:
+    checkpoint: checkpoints/sam_vit_h_4b8939.pth
+    type: vit_h
+    points_per_side: 12
+    pred_iou_thresh: 0.88
+    points_per_batch: 144
+    crop_n_layers: 0
+    stability_score_thresh: 0.95
+    min_mask_region_area: 100
+
+pipeline:
+  # 그래프 생성 여부
+  create_graph: True
+  voxel_size: 0.02
+  skip_frames: 10
+  # 3차원 Voxel 영역에서 객체 병합 임계값
+  init_overlap_thresh: 0.75
+  # 3차원 Voxel 영역에서 객체 병합 실패 시 점진적 병합 임계값 조정 수치
+  
+  # 첫 번째 시도: 객체 공통 영역 0.55 -> 0.55 < 0.75 이므로 병합 실패
+  # 여기서 overlap_thresh_factor 수치만큼 임계값 조정 -> 0.75 - 0.025 = 0.725
+  # 두 번째 시도: 다음 프레임에서 객체 공통 영역이 0.60 -> 0.60 < 0.725 이므로 병합 실패
+  # 여기서 overlap_thresh_factor 수치만큼 임계값 조정 -> 0.725 - 0.025 = 0.70
+  # 세 번째 시도: 다음 프레임에서 객체 공통 영역이 0.72 -> 0.72 > 0.70 이므로 병합 성공
+  overlap_thresh_factor: 0.025
+  # 최소 IoU 임계값 -> 포인트 클라우드 병합 시 미미한 객체에 대해서는 무시
+  iou_thresh: 0.05
+  
+  # Crop Image와 Segmentation CLIP 가중합 비율
+  clip_masked_weight: 0.4418
+  # Crop Image에서 객체 바운딩 박스 여백
+  clip_bbox_margin: 50 # in pixels
+
+  # DBScan 파라미터 설정
+  # DBScan 클러스터 임계값 (이웃의 포인트 거리 기반) -> 작으면 더 많은 클러스터 생성
+  feature_dbscan_eps: 0.01  # 1cm
+  # 서로 다른 뷰에서 관측된 포인트 클라우드 병합 거리 임계값
+  max_mask_distance: 10000 # 6.4239 in meters
+  # 한 클러스터에 필요한 최소 포인트 클라우드 수
+  min_pcd_points: 100
+  # 깊이 정보 가중치 사용 여부 -> True면 카메라에 가까운 포인트에 더 높은 가중치 부여
+  depth_weighting: false
+  # 3D 그리드 해상도
+  grid_resolution: 0.05
+  # 클러스터링 병합 방식
+  merge_type: sequential # hierarchical, sequential
+  save_intermediate_results: false
+  obj_labels: HM3DSEM_LABELS
+  # Scene graph 생성에 있어서 객체 병합 여부 (비슷한 객체를 묶는 작업)
+  merge_objects_graph: false
+
+  # 관계 추출 설정
+  # 관계 임베딩 계산 여부
+  compute_relations: true
+  # 객체 당 상위 K개 프레임 저장
+  top_k_frames: 10
+  # 관계 후보 최대 거리 (m)
+  relation_max_dist: 3.0
+  # 관계 계산 시 사용할 공통 프레임 수
+  top_k_rel_frames: 5
+  # depth consistency 비율 임계값
+  vis_ratio_thresh: 0.3
+  # 최소 bbox 픽셀 수 (20x20)
+  min_bbox_pixels: 400
+  # depth 일치 임계값 (m)
+  depth_consistency_thresh: 0.1
