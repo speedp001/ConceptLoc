@@ -6,7 +6,7 @@ main:
   package_path: ./hovsg/
   dataset_path: ./data/hm3dsem_walks/
   raw_data_path: ./data/hm3dsem
-  save_path: ./data/hm3dsem_scene_graph/
+  save_path: ./data/hm3dsem_scene_graphs/
 
 dataset:
   hm3dsem:
