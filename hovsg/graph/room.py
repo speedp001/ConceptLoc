@@ -10,7 +10,7 @@ from typing import Any, List
 import numpy as np
 import open3d as o3d
 
-# from hovsg.utils.graph_utils import feats_denoise_dbscan, find_overlapping_ratio
+from hovsg.utils.graph_utils import feats_denoise_dbscan, find_overlapping_ratio
 from hovsg.utils.clip_utils import get_img_feats, get_text_feats_multiple_templates
 
 

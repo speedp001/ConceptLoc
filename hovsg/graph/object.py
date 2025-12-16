@@ -17,6 +17,7 @@ class Object:
     :param name: Name of the object (e.g., "Chair", "Table")
     """
     def __init__(self, object_id, room_id, name=None):
+        self.mask_idx = None  # Mask index in the segmentation map
         self.object_id = object_id  # Unique identifier for the object
         self.vertices = None  # Coordinates of the object in the point cloud 8 vertices
         self.embedding = None  # CLIP Embedding of the object
@@ -42,6 +43,7 @@ class Object:
         # save the metadata
         metadata = {
             "object_id": self.object_id,
+            "mask_idx": self.mask_idx,
             "vertices": np.array(self.vertices).tolist(),
             "room_id": self.room_id,
             "name": self.name,
@@ -60,6 +62,7 @@ class Object:
         # load the metadata
         with open(path + "/" + str(self.object_id) + ".json") as json_file:
             metadata = json.load(json_file)
+            self.mask_idx = metadata.get("mask_idx", None)
             self.vertices = np.asarray(metadata["vertices"])
             self.room_id = metadata["room_id"]
             self.name = metadata["name"]

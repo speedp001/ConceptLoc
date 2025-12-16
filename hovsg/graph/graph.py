@@ -3,6 +3,7 @@
 """
 
 import os
+import json
 import copy
 from typing import Any, Dict, List, Set, Tuple, Union
 from pathlib import Path
@@ -29,10 +30,6 @@ import networkx as nx
 import torch
 import open_clip
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator, SamPredictor
-
-import pickle
-from PIL import Image
-from transformers import BlipProcessor, BlipModel
 
 from hovsg.graph.object import Object
 from hovsg.graph.room import Room
@@ -100,6 +97,9 @@ class Graph:
         
         # Scene Graph Floors
         self.floors = []
+        
+        # 어떤 mask_idx가 어떤 object인지 매핑
+        self.mask_idx_to_object = {}
 
         # networkx 라이브러리 -> 그래프 데이터 구조를 생성하고 조작하는 데 사용
         self.graph = nx.Graph()
@@ -616,6 +616,7 @@ class Graph:
             walls_skeleton, cv2.MORPH_CLOSE, kernal, iterations=1
         )
 
+        # 층 외부 벽면
         # extract outside boundary from histogram of xyz_full
         hist_full, _, _ = np.histogram2d(xyz_full[:, 1], xyz_full[:, 0], bins=num_bins)
         hist_full = cv2.normalize(hist_full, hist_full, 0, 255, cv2.NORM_MINMAX).astype(
@@ -635,7 +636,6 @@ class Graph:
             outside_boundary, cv2.MORPH_CLOSE, kernal, iterations=3
         )
 
-        # 가장자리 벽 외곽 추출
         # extract the outside contour from the outside boundary
         contours, _ = cv2.findContours(
             outside_boundary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
@@ -734,6 +734,7 @@ class Graph:
 
         pcd_min = np.min(np.array(floor_pcd.points), axis=0)
         pcd_max = np.max(np.array(floor_pcd.points), axis=0)
+        # assert는 디버깅용 문법 -> True면 넘어가고 False면 에러 발생
         assert pcd_min.shape[0] == 3
 
         # 뽑은 프레임 리스트를 어느 room_pcd에 해당하는지를 판별해서 구분
@@ -785,7 +786,19 @@ class Graph:
         :param save_dir: str, optional, The path to save the intermediate results
         """
         for i, pcd in enumerate(self.mask_pcds):
+            # 해당 포인트의 반경 0.05m 이내에 10개 미만의 포인트가 있으면 제거
             self.mask_pcds[i] = pcd_denoise_dbscan(pcd, eps=0.05, min_points=10)
+            
+        # hm3d 데이터셋에서 등장하는 객체 종류에 대해서 미리 정리해 둔 text 목록(HM3D_CountsOfObjectTypes.csv)파일을 읽고 CLIP 임베딩 계산
+        """
+        ["chair", "table", "sofa", "tv", "lamp", "cabinet", ...]
+        text 목록을 읽어와서 해당 객체에 대한 임베딩 값을 생성 -> 객체 유사도 비교
+        [
+            chair -> [0.02, -0.11, ..., 0.07],
+            table -> [-0.05, 0.03, ..., -0.02],
+            ...
+        ]
+        """
         text_feats, classes = get_label_feats(
             self.clip_model,
             self.clip_feat_dim,
@@ -793,12 +806,21 @@ class Graph:
             self.cfg.main.save_path,
         )
 
+        """
+        Floor 객체 속성 -> segment_floors에서 생성
+        floor.floor_id (문자열 id)
+        floor.pcd (그 층 범위로 crop된 포인트클라우드)
+        floor.floor_zero_level (해당 층 바닥의 y값)
+        floor.floor_height (층 높이)
+        floor.rooms (그 층에 속한 Room 리스트)
+        """
         pbar = tqdm(enumerate(self.floors), total=len(self.floors), desc="Floor: ")
         margin = 0.2
         for f_idx, floor in pbar:
             pbar.set_description(f"Floor: {f_idx}")
             floor_pcd = floor.pcd
             objects_inside_floor = list()
+            # 층에 해당하는 mask_pcd(인스턴스 포인트 클라우드 덩어리) 분류
             # assign objects to rooms
             for i, pcd in enumerate(self.mask_pcds):
                 min_z = np.min(np.asarray(pcd.points)[:, 1])
@@ -808,6 +830,7 @@ class Graph:
                 ):
                     objects_inside_floor.append(i)
 
+            # 층 내부의 mask 리스트 순회
             # show the second layer of pbar with tqdm
             obj_pbar = tqdm(
                 enumerate(objects_inside_floor),
@@ -815,6 +838,24 @@ class Graph:
                 desc="Object: ",
                 leave=False,
             )
+            
+            """
+            Room 객체 속성
+            room_id (그래프 내 방 고유 ID)
+            name (방 이름, 나중에 room type 추론 결과로 갱신)
+            category (GT 카테고리용 placeholder)
+            floor_id (이 방이 속한 층 ID)
+            objects (이 방에 속한 Object 리스트)
+            vertices (BEV 상 방의 2D footprint 좌표 집합)
+            embeddings (방 대표 CLIP 임베딩들 리스트)
+            pcd (방의 3D 포인트 클라우드)
+            room_height (방 높이)
+            room_zero_level (방 바닥 y 좌표)
+            represent_images (방을 대표하는 이미지 프레임 인덱스들)
+            object_counter (방 안에서 object_id 붙이기 위한 카운터)
+            """
+            # 해당 객체가 어느 방에 속하는지 판별
+            # mask_pcd를 2D로 투영한 후, 각 방의 footprint와 겹치는 비율 계산
             for obj_floor_idx, mask_idx in obj_pbar:
                 room_assoc = list()
                 for r_idx, room in enumerate(floor.rooms):
@@ -825,6 +866,7 @@ class Graph:
                             0.2,
                         )
                     )
+                # footprint 기준으로 겹치는 방이 없는 경우 -> 가까운 거리에 있는 방으로 할당
                 # for outlier objects, utilize Euclidean distance between room centers and mask centers
                 if np.sum(room_assoc) == 0:
                     for r_idx, room in enumerate(floor.rooms):
@@ -869,13 +911,28 @@ class Graph:
                             )
                         )
 
+                # 각 객체 마스크를 방에 할당
+                # ex) closest_room_idx = 2
                 closest_room_idx = np.argmax(room_assoc)
 
+                # 데이터 셋에서 뽑은 라벨 이름 인덱스와 mask 임베딩 유사도를 비교하여 객체 이름 결정
+                # 코사인 유사도로 결정
                 name = self.identify_object(
                     self.mask_feats[mask_idx], text_feats, classes
                 )
                 # if [i for i in ["wall", "floor", "ceiling", "window", "door", "roof", "railing"] if i in name]:
                 #     continue
+                """
+                Object 객체가 가지는 주요 속성들
+                object_id (그래프 내에서 객체를 구분하는 고유 ID)
+                room_id (이 객체가 속한 방의 ID)
+                name (CLIP로 추론한 객체 이름)
+                gt_name (GT 주석이 있을 때의 정답 클래스 이름, 없으면 None)
+                vertices (객체의 2D/3D 좌표 집합, 주로 BEV 상 xz 좌표 / bbox 꼭짓점 등)
+                embedding (객체를 대표하는 CLIP 임베딩 벡터, mask 기준 평균 feature 등)
+                pcd (이 객체에 해당하는 3D 포인트 클라우드)
+                """
+                
                 parent_room = floor.rooms[closest_room_idx]
                 object = Object(
                     parent_room.room_id + "_" + str(parent_room.object_counter),
@@ -883,6 +940,16 @@ class Graph:
                 )
                 parent_room.object_counter += 1
                 object.name = name
+                object.mask_idx = int(mask_idx)
+                self.mask_idx_to_object[int(mask_idx)] = object
+                """
+                self.mask_idx_to_object = {
+                    0: <Object object at 0x...>,  # object_id="0_0_0"
+                    1: <Object object at 0x...>,  # object_id="0_0_1"
+                    2: <Object object at 0x...>,  # object_id="0_0_2"
+                    ...
+                }
+                """
                 obj_pbar.set_description(
                     f"object name: {object.name}, {object.object_id}"
                 )
@@ -931,7 +998,19 @@ class Graph:
                 topo_obj.save(os.path.join(path, "rooms"))
             elif type(topo_obj) == Object:
                 topo_obj.save(os.path.join(path, "objects"))
-
+        
+        # mask_idx -> object_id 매핑 저장
+        # object_id -> mask_idx 매핑 저장
+        if self.mask_idx_to_object:
+            mapping = {str(k): v.object_id for k, v in self.mask_idx_to_object.items()}
+            with open(os.path.join(path, "objects", "mask_idx2object.json"), "w") as f:
+                json.dump(mapping, f, indent=2)
+            
+            rev_mapping = {v.object_id: int(k) for k, v in self.mask_idx_to_object.items()}
+            with open(os.path.join(path, "objects", "object2mask_idx.json"), "w") as f:
+                json.dump(rev_mapping, f, indent=2)
+        
+    
     def load_graph(self, path):
         """
         Load the HOV-SG graph
@@ -1011,7 +1090,30 @@ class Graph:
         print("segmenting/identifying objects...")
         self.segment_objects(save_path)
 
+        # 객체 인덱스와 실제 객체 정보가 올바르게 매칭되어 있는지 검증
+        # obj.pcd.points의 중심과 mask_pcds[k].points의 중심이 일치하는지 확인
+        ok = 0
+        bad = 0
+        for k, obj in self.mask_idx_to_object.items():
+            if k >= len(self.mask_pcds):
+                print("[BAD] mask_idx out of range:", k, "len(mask_pcds)=", len(self.mask_pcds))
+                bad += 1
+                continue
+
+            c1 = np.mean(np.asarray(obj.pcd.points), axis=0)
+            c2 = np.mean(np.asarray(self.mask_pcds[k].points), axis=0)
+            d = np.linalg.norm(c1 - c2)
+            if d < 1e-6:
+                ok += 1
+            else:
+                print("[MISMATCH]", k, obj.object_id, "center_dist=", d)
+                bad += 1
+                
+        print("center match ok:", ok, "bad:", bad)
+
         print("number of objects: ", len(self.objects))
+        
+        # 가까이 있고 이름이 같은 객체들을 병합
         if self.cfg.pipeline.merge_objects_graph:
             # merge objects that close to each other with same name
             for room in tqdm(self.rooms):
