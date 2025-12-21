@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-# 파이썬 객체들을 직렬화해서 저장할 수 있게 해주는 라이브러리
 import pickle
 from typing import Dict, Tuple, List
 
@@ -26,6 +25,7 @@ class RelationalGraph(Graph):
         self.object_pairs = None
         self.relation_embeddings = None
         self.save_dir = None
+        self.mask_idx_to_object = {}
 
     # 객체 인스턴스가 잘 보이는 프레임 추출과 공통영역 바운딩 박스 계산
     def compute_object_frame_bboxes(self):
@@ -406,66 +406,69 @@ class RelationalGraph(Graph):
         
         return relation_embeddings
     
-    def attach_relation_edges_to_nx(self):
+    def attach_relation_edges(self):
         """
-        pkl / npz 에 저장된 관계 정보들을 실제 self.graph (networkx)에 edge로 추가.
-        - object2frames / object_pairs / relation_frames / relation_embeddings / relation_names 사용
+        graph/edges/relation_names.json + relation_embeddings.json을 읽어서
+        self.graph(networkx)에 object-object relation edge를 추가
+        key 포맷 -> "obj_i_obj_j" (obj_i, obj_j는 mask_idx)
         """
-        relation_frames = self.relation_frames
-        object_pairs = self.object_pairs
-        relation_embeddings = self.relation_embeddings
-        relation_names = {}
-        num_added = 0
+        save_path = self.save_dir
 
-        for (obj_i, obj_j), frames in relation_frames.items():
-            # safety: 인덱스 범위 체크
-            if obj_i >= len(self.objects) or obj_j >= len(self.objects):
+        # 관계 정의 Json 파일 로드
+        relation_names = load_relation_names(save_path)
+        relation_embeddings = load_relation_embeddings(save_path)
+
+        # mask_idx -> Object 매핑 정보를 pkl 파일에서 로드 (Dict[int, Object 형태로 저장되어 있다는 전제)
+        if not self.mask_idx_to_object:
+            pkl_path = os.path.join(save_path, "graph", "objects", "mask_idx_to_object_id.pkl")
+            if not os.path.exists(pkl_path):
+                raise FileNotFoundError(f"mask_idx_to_object_id.pkl not found: {pkl_path}")
+
+            with open(pkl_path, "rb") as f:
+                self.mask_idx_to_object = pickle.load(f)  # Dict[int, Object]
+
+        # 실제 그래프에 추가된 관계 edge 개수
+        added = 0
+        # 중복 edge 방지
+        seen = set()
+
+        for (obj_i, obj_j), info in relation_names.items():
+            # 무방향 그래프 중복 방지
+            key = (min(obj_i, obj_j), max(obj_i, obj_j))
+            if key in seen:
                 continue
+            seen.add(key)
 
-            obj_i_node = self.mask_idx_to_object.get(int(obj_i))
-            obj_j_node = self.mask_idx_to_object.get(int(obj_j))
-            if obj_i_node is None or obj_j_node is None:
+            # Object 객체를 그대로 가져옴 (node_i/node_j는 Object 인스턴스)
+            node_i = self.mask_idx_to_object.get(int(obj_i))
+            node_j = self.mask_idx_to_object.get(int(obj_j))
+            if node_i is None or node_j is None:
                 continue
-
-            # 가장 score가 높은 frame 하나 선택 (리스트의 첫 번째)
-            best_frame = frames[0] if len(frames) > 0 else None
-            best_frame_id = None if best_frame is None else best_frame["frame_id"]
-
-            # 3D 거리
-            dist_ij = object_pairs.get((obj_i, obj_j), None)
 
             # 관계 임베딩
             rel_emb = relation_embeddings.get((obj_i, obj_j), None)
-            if rel_emb is not None:
-                rel_emb = np.asarray(rel_emb).astype(float)
-            
-            # 관계 이름 및 점수 (필요시 self.relation_names 등에서 가져올 수 있음)
-            rel_name_info = relation_names.get((obj_i, obj_j), {})
-            rel_name = rel_name_info.get("name", None)
-            rel_score = rel_name_info.get("score", None)
+            if rel_emb is None:
+                # 반대 방향도 확인
+                rel_emb = relation_embeddings.get((obj_j, obj_i), None)
 
-            # networkx edge 추가
+            # 임베딩 추출한 frame ids
+            frame_ids = info.get("frame_ids", [])
+
+            # edge 추가 + edge attribute 저장
             self.graph.add_edge(
-                obj_i_node,
-                obj_j_node,
+                node_i, node_j,
                 type="relation",
-                obj_i=int(obj_i),
-                obj_j=int(obj_j),
-                best_frame_id=best_frame_id,
-                distance_3d=dist_ij,
-                relation_emb=rel_emb,
-                relation_name=rel_name,
-                relation_score=rel_score,
+                mask_idx_i=int(obj_i),
+                mask_idx_j=int(obj_j),
+                relation_name=info.get("name", None),
+                relation_score=info.get("score", None),
+                relation_emb=rel_emb,      # np.ndarray or list 둘 다 가능(저장 포맷만 일관되게)
+                frame_ids=frame_ids,
+                object_id=info.get("object_id", None),  # [object_id_i, object_id_j]
             )
-            num_added += 1
+            added += 1
 
-        print(f"[attach_relation_edges_to_nx] Added {num_added} relation edges to self.graph")
-        
-        
-        
-        
-        
-        
+        print(f"Added {added} relation edges")
         
     # Object 매핑이 맞는지 확인
     # obj_pcd 중심 vs mask_pcds[mask_idx] 중심 비교
@@ -579,7 +582,7 @@ class RelationalGraph(Graph):
     ##### Relation graph build    
     def build_relational_graph(self, path):
         # 기본 그래프 생성
-        # super().build_graph(save_path=path)
+        super().build_graph(save_path=path)
         self.save_dir = path
 
         # 1차 segment_objects 이후 매핑 검증
@@ -610,7 +613,8 @@ class RelationalGraph(Graph):
         print("Step 4: BLIP relation embeddings...")
         self.compute_blip_relation_embeddings()
         
-        # print("Step 5: Attach relation edges to networkx graph...")
-        # self.attach_relation_edges_to_nx()
+        # Graph에 관계 edge 추가
+        print("Step 5: Attach relation edges to graph...")
+        self.attach_relation_edges()
         
         print("=== Relation computation complete ===\n")

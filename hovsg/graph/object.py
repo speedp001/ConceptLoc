@@ -16,6 +16,7 @@ class Object:
     :param room_id: Identifier of the room this object belongs to
     :param name: Name of the object (e.g., "Chair", "Table")
     """
+    
     def __init__(self, object_id, room_id, name=None):
         self.mask_idx = None  # Mask index in the segmentation map
         self.object_id = object_id  # Unique identifier for the object

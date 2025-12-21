@@ -5,6 +5,7 @@
 import os
 import json
 import copy
+import pickle
 from typing import Any, Dict, List, Set, Tuple, Union
 from pathlib import Path
 
@@ -780,7 +781,7 @@ class Graph:
         # find the class with the highest similarity
         return classes[np.argmax(similarity)]
 
-    def segment_objects(self, save_dir: str = None):
+    def segment_objects(self, save_dir):
         """
         Per floor, assign each object to the room with the highest overlap.
         :param save_dir: str, optional, The path to save the intermediate results
@@ -934,6 +935,7 @@ class Graph:
                 """
                 
                 parent_room = floor.rooms[closest_room_idx]
+                # 선언할 때 object_id와 room_id가 필요
                 object = Object(
                     parent_room.room_id + "_" + str(parent_room.object_counter),
                     parent_room.room_id,
@@ -950,14 +952,25 @@ class Graph:
                     ...
                 }
                 """
+                
                 obj_pbar.set_description(
                     f"object name: {object.name}, {object.object_id}"
                 )
+                
                 object.pcd = self.mask_pcds[mask_idx]
                 object.vertices = np.array(self.mask_pcds[mask_idx].points)[:, [0, 2]]
                 object.embedding = self.mask_feats[mask_idx]
                 floor.rooms[closest_room_idx].add_object(object)
                 self.objects.append(object)
+                
+                # mask_idx_to_object pkl형식으로 저장 -> 재사용을 위함
+                obj_dir = os.path.join(save_dir, "graph", "objects")
+                os.makedirs(obj_dir, exist_ok=True)
+
+                mask_idx2object_id = {int(k): v.object_id for k, v in self.mask_idx_to_object.items()}
+
+                with open(os.path.join(obj_dir, "mask_idx_to_object_id.pkl"), "wb") as f:
+                    pickle.dump(mask_idx2object_id, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def create_graph(self):
         """

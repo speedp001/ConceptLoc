@@ -240,7 +240,7 @@ class BlipRelationExtractor:
         return relation_embeddings
 
 
-def load_relation_embeddings(save_path: str) -> Dict[Tuple[int, int], np.ndarray]:
+def load_relation_embeddings(save_path):
 
     json_file = os.path.join(save_path,"graph", "edges", "relation_embeddings.json")
     if not os.path.exists(json_file):
@@ -257,7 +257,7 @@ def load_relation_embeddings(save_path: str) -> Dict[Tuple[int, int], np.ndarray
     return relation_embeddings
 
 
-def load_relation_names(save_path: str) -> Dict[Tuple[int, int], Dict]:
+def load_relation_names(save_path):
 
     json_file = os.path.join(save_path,"graph", "edges", "relation_names.json")
     
