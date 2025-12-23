@@ -582,7 +582,7 @@ class RelationalGraph(Graph):
     ##### Relation graph build    
     def build_relational_graph(self, path):
         # 기본 그래프 생성
-        super().build_graph(save_path=path)
+        # super().build_graph(save_path=path)
         self.save_dir = path
 
         # 1차 segment_objects 이후 매핑 검증

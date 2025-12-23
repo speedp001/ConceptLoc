@@ -80,12 +80,12 @@ pipeline:
   # 객체 당 상위 K개 프레임 저장
   top_k_frames: 5
   # 관계 후보 최대 거리 (m)
-  relation_max_dist: 1.5
+  relation_max_dist: 1.0
   # 관계 계산 시 사용할 공통 프레임 수
-  top_k_rel_frames: 10
+  top_k_rel_frames: 5
   # depth consistency 비율 임계값
-  vis_ratio_thresh: 0.3
-  # 최소 bbox 픽셀 수 (50x50)
-  min_bbox_pixels: 2500
+  vis_ratio_thresh: 0.7
+  # 최소 bbox 픽셀 수 (100x100)
+  min_bbox_pixels: 10000
   # depth 일치 임계값 (m)
   depth_consistency_thresh: 0.1

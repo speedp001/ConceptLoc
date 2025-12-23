@@ -17,8 +17,8 @@ def main():
         "data",
         "Replica_seg",
         "room1",
-        "full_pcd.ply",
-        # "masked_pcd.ply"
+        # "full_pcd.ply",
+        "masked_pcd.ply"
     )
 
     if not os.path.exists(ply_path):
@@ -29,7 +29,15 @@ def main():
 
     # 포인트 개수 등 정보 출력
     print(pcd)
-    o3d.visualization.draw_geometries([pcd])
 
+    # O3DVisualizer를 사용한 시각화
+    o3d.visualization.gui.Application.instance.initialize()
+    vis = o3d.visualization.O3DVisualizer("PointCloud Viewer", 1024, 768)
+    vis.add_geometry("pcd", pcd)
+
+    app = o3d.visualization.gui.Application.instance
+    app.add_window(vis)
+    app.run()
+    
 if __name__ == "__main__":
     main()

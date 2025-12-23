@@ -257,13 +257,13 @@ def main(params: DictConfig):
                 show_scalar_bar=False,
             )
         
-    # ============    # Object-Object relation edges 시각화    ============
+    # Relation edges 시각화
     relation_json_path = _find_relation_names_json(params.graph_path)
     relation_edges = _load_relation_edges(relation_json_path)
     print(f"[visualize_relational_graph] relation_names.json: {relation_json_path if relation_json_path else 'NOT FOUND'}")
     print(f"[visualize_relational_graph] #relation_edges: {len(relation_edges)}")
 
-    # 1) 유효 edge만 모으기
+    # 유효 edge만 모으기
     pts = []
     lines = []
     seen = set()
