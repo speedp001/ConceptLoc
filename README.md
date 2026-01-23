@@ -37,10 +37,7 @@ Our framework constructs a large-scale indoor scene representation as a **hierar
 The system consists of three key components:
 
 ### 1. Hierarchical Scene Graph Construction
-The global 3D point cloud is first aligned to a canonical coordinate system and partitioned along the height axis to separate individual floors.  
-Each floor is then projected into a bird’s-eye-view occupancy map, where wall structures are detected and used to segment the space into rooms via density-based clustering and watershed partitioning.  
-Object nodes extracted from RGB-D observations are anchored to their corresponding room and floor nodes, forming a hierarchical **Floor → Room → Object** graph structure.  
-This hierarchy allows the search space to be progressively reduced and supports coarse-to-fine reasoning in large-scale environments.
+The global 3D point cloud is first aligned to a canonical coordinate system and partitioned along the height axis to separate individual floors. Each floor is then projected into a bird’s-eye-view occupancy map, where wall structures are detected and used to segment the space into rooms via density-based clustering and watershed partitioning. Object nodes extracted from RGB-D observations are anchored to their corresponding room and floor nodes, forming a hierarchical **Floor → Room → Object** graph structure. This hierarchy allows the search space to be progressively reduced and supports coarse-to-fine reasoning in large-scale environments.
 
 ### 2. Open-vocabulary Object Embedding
 For each detected object, multi-modal visual cues are encoded using CLIP:
@@ -48,21 +45,17 @@ For each detected object, multi-modal visual cues are encoded using CLIP:
 - Bounding box region
 - Segmentation mask region
 
-The resulting embeddings are aggregated into a unified object representation that captures both local appearance and global semantic context.  
-This enables recognition of objects beyond a closed-set label space and supports free-form language queries.
+The resulting embeddings are aggregated into a unified object representation that captures both local appearance and global semantic context. This enables recognition of objects beyond a closed-set label space and supports free-form language queries.
 
 ### 3. Open-vocabulary Relation Embedding
-For each object pair, relation-aware visual-language embeddings are extracted using BLIP by jointly observing the two objects within the same frame.  
-The resulting relational edges encode not only geometric configurations (e.g., on, inside, next to) but also semantic interactions and contextual relationships, forming a rich relational graph.
+For each object pair, relation-aware visual-language embeddings are extracted using BLIP by jointly observing the two objects within the same frame. The resulting relational edges encode not only geometric configurations (e.g., on, inside, next to) but also semantic interactions and contextual relationships, forming a rich relational graph.
 
 ### Relational Scene Graph
 <p align="center">
   <img src="https://i.imgur.com/UblqzCe.png" width="90%">
 </p>
 
-The final scene graph combines a hierarchical layout with open-vocabulary embeddings for objects and relations.
-Yellow nodes indicate floors, blue nodes represent rooms, and red edges show semantically meaningful object–object relations within each room.
-This unified structure jointly encodes spatial hierarchy and relational context, enabling robust localization and language-driven object retrieval in large-scale indoor environments.
+The final scene graph combines a hierarchical layout with open-vocabulary embeddings for objects and relations. Yellow nodes indicate floors, blue nodes represent rooms, and red edges show semantically meaningful object–object relations within each room. This unified structure jointly encodes spatial hierarchy and relational context, enabling robust localization and language-driven object retrieval in large-scale indoor environments.
 
 ---
 
