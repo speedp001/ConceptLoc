@@ -20,11 +20,7 @@
 
 ## Project Introduction
 
-We propose an Open-vocabulary relational scene graph for large-scale indoor environments.  
-Unlike conventional scene graphs relying on predefined object categories and fixed relation sets,  
-our method represents both objects and their relationships using open-vocabulary semantic embeddings.  
-The scene is organized hierarchically into **floor–room–object** levels, enabling scalable spatial reasoning,  
-robust visual localization, and language-driven object retrieval in complex indoor spaces.
+We propose an Open-vocabulary relational scene graph for large-scale indoor environments. Unlike conventional scene graphs relying on predefined object categories and fixed relation sets, our method represents both objects and their relationships using open-vocabulary semantic embeddings. The scene is organized hierarchically into **floor–room–object** levels, enabling scalable spatial reasoning, robust visual localization, and language-driven object retrieval in complex indoor spaces.
 
 ---
 
@@ -70,16 +66,9 @@ This unified representation enables robust cross-modal matching, relation-aware 
 
 ## Applications
 
-| Scene Graph-based Visual Localization | Open-vocabulary Query-based Object Retrieval |
-|--------------------------------------|----------------------------------------------|
-| <p align="center"><img src="https://i.imgur.com/uCYEZoP.png" width="80%"></p> | <p align="center"><img src="https://i.imgur.com/7XNCWIl.png" width="100%"></p> |
-| **Pipeline**<br/>1. Extract object and relation embeddings.<br/>2. Perform cosine similarity matching with global scene graph nodes.<br/>3. Validate matches using relation-edge consistency.<br/>4. Enforce room-level hierarchical constraints.<br/>5. Estimate camera pose using PnP with matched 2D–3D correspondences. | **Pipeline**<br/>1. Convert free-form text query into CLIP embedding.<br/>2. Apply coarse-to-fine hierarchical filtering (Floor → Room → Object).<br/>3. Refine candidates using relation-aware matching. |
-
-## Applications
-
 | Visual Localization | Object Retrieval |
 |---------------------|------------------|
-| <img src="https://i.imgur.com/uCYEZoP.png" width="100%"> | <img src="https://i.imgur.com/7XNCWIl.png" width="100%"> |
+| <img src="https://i.imgur.com/uCYEZoP.png" width="80%"> | <img src="https://i.imgur.com/7XNCWIl.png" width="100%"> |
 
 ### Scene Graph-based Visual Localization
 1. Extract object and relation embeddings.
