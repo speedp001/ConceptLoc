@@ -9,8 +9,8 @@
 
 # data 내 예외처리 파일
 !/data/
-!/data/download_3RScan.py
-!/data/download_ScanNet.py
+# !/data/download_3RScan.py
+# !/data/download_ScanNet.py
 !/data/hm3dsem_preparation.py
 
 /outputs/
