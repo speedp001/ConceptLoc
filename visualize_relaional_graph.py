@@ -9,7 +9,6 @@ import hydra
 import open3d as o3d
 import matplotlib.pyplot as plt
 import pyvista as pv
-from tqdm import tqdm
 from omegaconf import DictConfig
 
 
