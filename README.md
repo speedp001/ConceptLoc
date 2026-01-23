@@ -1,4 +1,5 @@
 ### Last Update: 2026.01.23
+### ![IPIU2026 Logo](https://i.imgur.com/KJZB2bJ.png)
 
 # ConceptLoc
 
