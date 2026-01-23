@@ -13,11 +13,8 @@
 
 - [Project Introduction](#project-introduction)  
 - [System Overview](#system-overview)
-- [Modules Overview](#modules-overview)
-- [Experiments](#experiments)
+- [Applications](#applications)
 - [Requirements](#requirements)
-- [Demo Video](#demo-video)
-<br></br>
 
 ---
 
@@ -87,19 +84,13 @@ Given a query image:
 
 ---
 
-## Experiments
+## Applications
 
-- **Datasets**: HM3D, Replica
-- **Hierarchical Accuracy**:
-  - Floor classification: 100%
-  - Room classification: robust except in open-boundary spaces
-- **Object Embedding Evaluation**:
-  - Metrics: mAcc, pAcc
-- **Relation Embedding Evaluation**:
-  - Metric: Confidence score
-  - Stable across diverse semantic and geometric relations
+| Scene Graph-based Visual Localization | Open-vocabulary Query-based Object Retrieval |
+|--------------------------------------|----------------------------------------------|
+| <p align="center"><img src="https://i.imgur.com/uCYEZoP.png" width="100%"></p> | <p align="center"><img src="https://i.imgur.com/7XNCWIl.png" width="100%"></p> |
+| **Pipeline**<br/>1. Extract object and relation embeddings.<br/>2. Perform cosine similarity matching with global scene graph nodes.<br/>3. Validate matches using relation-edge consistency.<br/>4. Enforce room-level hierarchical constraints.<br/>5. Estimate camera pose using PnP with matched 2D–3D correspondences. | **Pipeline**<br/>1. Convert free-form text query into CLIP embedding.<br/>2. Apply coarse-to-fine hierarchical filtering (Floor → Room → Object).<br/>3. Refine candidates using relation-aware matching. |
 
----
 
 ## Requirements
 
