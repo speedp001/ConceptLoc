@@ -1,6 +1,6 @@
 ### Last Update: 2026.01.23
 
-# Open-vocabulary Relational Scene Graph Generation for Large-scale Scene
+# ConceptLoc
 
 > This repository contains the official implementation of **“Open-vocabulary Relational Scene Graph Generation for Large-scale Scene”**,
 > submitted to **IPIU 2026 (제38회 영상처리 및 이해에 관한 워크샵)**.
@@ -34,13 +34,13 @@ robust visual localization, and language-driven object retrieval in complex indo
 ## System Overview
 
 <p align="center">
-  <img src="/Users/sang-yun/Downloads/IPIU_figure1.drawio.png" width="90%">
+  <img src="https://i.imgur.com/MeelM71.jpeg" width="90%">
 </p>
 
 The framework consists of three main components:
 
 1. **Hierarchical Scene Graph Construction**
-   - Global point cloud is partitioned into floors via height clustering.
+   - The global point cloud is partitioned into floors via height clustering.
    - Each floor is subdivided into rooms using BEV projection and wall-based segmentation.
    - Objects are anchored to room nodes, forming a Floor–Room–Object hierarchy.
 
@@ -57,12 +57,12 @@ The framework consists of three main components:
 
 ---
 
-## 🧠 Applications
+## Applications
 
-### 1. Scene Graph-based Visual Localization
+### Scene Graph-based Visual Localization
 
 <p align="center">
-  <img src="figures/Fig2_localization.png" width="90%">
+  <img src="https://i.imgur.com/uCYEZoP.png" width="90%">
 </p>
 
 Given a query image:
@@ -73,27 +73,21 @@ Given a query image:
 4. Enforce room-level hierarchical constraints.
 5. Estimate camera pose using PnP with matched 2D–3D correspondences.
 
-**Figure 2.**  
-*Relation-aware visual localization via joint matching of object nodes and relational edges in the hierarchical scene graph.*
-
 ---
 
-### 2. Open-vocabulary Query-based Object Retrieval
+### Open-vocabulary Query-based Object Retrieval
 
 <p align="center">
-  <img src="figures/Fig3_retrieval.png" width="90%">
+  <img src="https://i.imgur.com/7XNCWIl.png" width="90%">
 </p>
 
 1. Convert free-form text query into CLIP embedding.
 2. Apply coarse-to-fine hierarchical filtering (Floor → Room → Object).
 3. Refine candidates using relation-aware matching.
 
-**Figure 3.**  
-*Open-vocabulary object retrieval using hierarchical pruning and relation-consistent matching in large-scale indoor scenes.*
-
 ---
 
-## 📊 Experimental Results
+## Experiments
 
 - **Datasets**: HM3D, Replica
 - **Hierarchical Accuracy**:
@@ -107,4 +101,14 @@ Given a query image:
 
 ---
 
-## 📁 Repository Structure
+## Requirements
+
+This project builds upon the implementation and environment settings of **HOV-SG**.  
+Please follow the installation instructions and dependency setup provided in the official repository:
+
+🔗 https://github.com/hovsg/HOV-SG?tab=readme-ov-file
+
+All credits for the base infrastructure and environment configuration belong to the original authors of HOV-SG.  
+Users are required to prepare the runtime environment according to the guidelines in the above repository before running ConceptLoc.
+
+---
