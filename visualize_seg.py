@@ -4,22 +4,24 @@ import open3d as o3d
 
 def main():
     # PLY 파일 경로
-    # ply_path = os.path.join(
-    #     "data",
-    #     "hm3dsem_scene_graphs",
-    #     "hm3dsem",
-    #     "00862-LT9Jq6dN3Ea",
-    #     # "00890-6s7QHgap2fW",
-    #     # "full_pcd.ply",
-    #     "masked_pcd.ply"
-    # )
+    # HM3Dsem 데이터셋
     ply_path = os.path.join(
         "data",
-        "Replica_seg",
-        "room1",
+        "hm3dsem_scene_graphs",
+        "hm3dsem",
+        "00862-LT9Jq6dN3Ea",
+        # "00890-6s7QHgap2fW",
         # "full_pcd.ply",
         "masked_pcd.ply"
     )
+    # Replica_seg 데이터셋
+    # ply_path = os.path.join(
+    #     "data",
+    #     "Replica_seg",
+    #     "room1",
+    #     # "full_pcd.ply",
+    #     "masked_pcd.ply"
+    # )
 
     if not os.path.exists(ply_path):
         raise FileNotFoundError(f"PLY file not found: {ply_path}")
