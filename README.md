@@ -53,14 +53,14 @@ This enables recognition of objects beyond a closed-set label space and supports
 For each object pair, relation-aware visual-language embeddings are extracted using BLIP by jointly observing the two objects within the same frame.  
 The resulting relational edges encode not only geometric configurations (e.g., on, inside, next to) but also semantic interactions and contextual relationships, forming a rich relational graph.
 
+### Relational Scene Graph
 <p align="center">
   <img src="https://i.imgur.com/UblqzCe.png" width="90%">
 </p>
 
-The final scene graph integrates the hierarchical layout with open-vocabulary embeddings for objects and relations.  
-Yellow nodes denote floor-level anchors, blue nodes represent room-level partitions, and object nodes are connected within each room by relation edges.  
-Red edges visualize semantically meaningful object–object relations, illustrating how spatial structure and relational context are jointly encoded.  
-This unified representation enables robust cross-modal matching, relation-aware localization, and language-driven object retrieval in large-scale indoor environments.
+The final scene graph combines a hierarchical layout with open-vocabulary embeddings for objects and relations.
+Yellow nodes indicate floors, blue nodes represent rooms, and red edges show semantically meaningful object–object relations within each room.
+This unified structure jointly encodes spatial hierarchy and relational context, enabling robust localization and language-driven object retrieval in large-scale indoor environments.
 
 ---
 
