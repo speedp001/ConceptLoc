@@ -8,7 +8,7 @@
 > submitted to **IPIU 2026 (제38회 영상처리 및 이해에 관한 워크샵)**.
 > 컨퍼런스는 2026년 2월 4–6일, 제주도에서 개최되었습니다.
 
-- **IWAIT 2026 공식 웹사이트**: http://www.ipiu.or.kr/
+- **IPIU 2026 공식 웹사이트**: http://www.ipiu.or.kr/
 - **논문 링크**: 
 
 ## Index
